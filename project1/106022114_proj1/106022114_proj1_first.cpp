@@ -4,7 +4,12 @@
 #include <string>
 using namespace std;
 
-int field[19][40]={0};
+/*
+This is the code of NTHU EECS 204002 Data Structure project:Tetris
+Author: Wei-Hsiang Yu 游惟翔 106022114 NTHUPHYS
+*/
+
+int field[20][41]={0};
 
 //block分類內容
 int box[19][4] =
@@ -46,13 +51,13 @@ bool checktouch(int m,int n)
     return 1;
 };
 
-//invalid case 判斷(中間撞到方塊或移動超出邊界)**
+//invalid case 判斷(中間撞到方塊或移動超出邊界)
 bool checkinvalid(int m,int n,int move)
 {
     for (int i=0;i<4;i++)
         if (move<0)
         {
-            for (int j=0;j>move;j--)
+            for (int j=0;j>=move;j--)
             {
                 //中間撞到方塊
                 if(field[a[i].y][a[i].x-1+j]) return 0;
@@ -62,14 +67,15 @@ bool checkinvalid(int m,int n,int move)
         }
         else if (move>0)
         {
-            for (int j=0;j<move;j++)
+            for (int j=0;j<=move;j++)
             {
                 //中間撞到方塊
-                if(field[a[j].y][a[j].x-1+j]) return 0;
+                if(field[a[i].y][a[i].x-1+j]) return 0;
                 //超出左右兩邊邊界
                 else if (a[i].x+move>n) return 0;
             }
         }
+        else if (a[i].x>n) return 0;
     return 1;
 };
 
@@ -84,34 +90,38 @@ bool checksky()
 
 int main(int argc, char** argv)
 {
+    //讀入測資
     ifstream ifs(argv[1]);
     string str;
+    //將每個測資依照空格分別讀入，由於格式相同可用位置處理
     int count = 0;
     //matrix的大小
     int m,n;
     //方塊的種類
     string name;
     //col要從第幾個開始
-    int colloc;
+    int colloc=0;
     //碰到要移動到哪
-    int move;
+    int move=0;
 
     while (ifs >> str)
     {
         count++;
-
+        //頭一行第一個為row
         if (count==1)
         {
             stringstream ss;
             ss<<str;
             ss>>m;
         }
+        //頭一行第二個為col
         else if (count==2)
         {
             stringstream ss;
             ss<<str;
             ss>>n;
         }
+        //判斷是否結束
         else if (str == "End")
         {   
             break;
@@ -288,11 +298,18 @@ int main(int argc, char** argv)
                 ss<<str;
                 ss>>colloc;
 
-                //選定地方下落
-                for (int i=0;i<4;i++)
-                {
-                    a[i].x+=colloc;
-                }
+                //依照測資第二格說的欄位選定地方下落
+                for (int i=0;i<4;i++) a[i].x+=colloc;    
+                
+                //判斷是否是invalidcase
+                if (! checkinvalid(m,n,move))
+                    {
+                        cout<<count/3+1<<"row in testcase is the invalidcase!!!"<<endl;
+                        cout<<"-->inital column location is out of boundary"<<endl;
+                        count++;
+                        continue;
+                    }
+
                 while(checktouch(m,n))
                 {
                     //執行下落
@@ -307,11 +324,20 @@ int main(int argc, char** argv)
                 ss>>move;
 
                 //invalid block的判斷
-                if (! checkinvalid(m,n,move)) continue;
+                if (! checkinvalid(m,n,move))
+                {
+                    move=0;
+                    cout<<count/3+1<<"row in testcase is the invalidcase!!!"<<endl;
+                    cout<<"-->the motion will hit existing blocks or out of boundary"<<endl;
+                    continue;
+                }
 
                 //執行橫移
                 for (int i=0;i<4;i++)
                     a[i].x+=move;
+
+                //上一列的move會影響colloc的invalidcase判斷
+                move=0;
                     
                 //在未碰觸底部下執行下落
                 while( checktouch(m,n))
@@ -343,12 +369,30 @@ int main(int argc, char** argv)
                 //判定有無超出天花板
                 if (!checksky())
                 {
-                    cout<<("over height");
+                    cout<<("over height")<<endl;
                     break;
                 }
             }
         }   
     }
+
+    ofstream fout("106022114_proj1.final");
+
+    //cout結果
+    for  (int i=4;i<m+4;i++)
+    {
+        for (int j=0;j<n;j++)
+        {
+            if (j==n-1)
+            {
+                fout<<field[i][j];
+            }
+            else
+                fout<<field[i][j]<<" ";
+        }
+        fout<<endl;
+    }
+
     //cout結果
     for  (int i=4;i<m+4;i++)
     {
@@ -358,6 +402,11 @@ int main(int argc, char** argv)
         }
         cout<<endl;
     }
+
+    cout<<"106022114_proj1.final is completed."<<endl;
+
+    fout.close();
     ifs.close();
+
     return 0;
 }
